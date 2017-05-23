@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <link href="shrine.png" rel="shortcut icon">
+    <title>Shinto</title>
+    <style>
+      canvas {
+        border-radius: 2px;
+        margin: auto;
+        position: absolute;
+        top: 0px;
+        bottom: 0px;
+        right: 0px;
+        left: 0px;
+      }
+
+      body {
+        margin: 0px;
+        min-height: 1000px;
+      }
+
+      #how {
+        color: #555;
+        cursor: pointer;
+        text-align: left;
+        width: 870px;
+        background: #F5F5F5;
+        border-radius: 0px 0px 3px 3px;
+        padding: 15px;
+        font-family: Georgia;
+        font-size: 17pt;
+        font-weight: 400;
+        margin-top: 25px;
+        margin:auto;
+        position: absolute;
+        top: 500px;
+        bottom: 0px;
+        right: 0px;
+        left: 0px;
+        height: 100px;
+        line-height: 150%;
+      }
+    </style>
+    <script type="text/javascript" src="keys.js"></script>
+    <script src="particles.js"></script>
+    <script type="text/javascript" src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+  </head>
+  <body>
+    <canvas style="none;"></canvas>
+    <script>
+      $('canvas').hide().fadeIn(1000);
+    </script>
+    <script>
+      var canvas, ctx;
+      var WIDTH = 900;
+      var HEIGHT = 500;
+      var keystate;
+      var objects = [];
+      var total = 6;
+      var lose = false;
+
+      var shrinesLeft = 6;
+
+      function collision(ax, ay, aw, ah, bx, by, bw, bh){
+        return ax < bx+bw && ay < by+bh && bx < ax+aw && by < ay+ah
+      }
+
+      var facts = [
+        "The main purpose of a Shinto shrine is for sakekeeping of sacred objects, and not specifically for worship.",
+        "The Ise Grand Shrine is considered the most representative, and most historically significant shrine in Japan.",
+        "A Shinto shrine, also called a jinja, is a sacred place to show the power and nature of Kami.",
+        "There are over 80,000 shrines in Japan, where almost every neighborhood has one.",
+        "In ancient times, there were no shrines, instead worshipers gathered and performed simple rites near sacred objects such as sakaki trees.",
+        "Shinto shrines usually face south, and never north or west, as they were considered unlucky directions."
+      ]
+
+      function createShrine(q){
+        var posorneg = Math.random() >= 0.5 ? 1 : -1;
+        var dist = posorneg * ((Math.random()*10000)+500);
+        var fact = facts[q];
+        objects.push(new Shrine(dist, fact));
+      }
+
+      var relic = new Image();
+      relic.src = "shrine.png";
+
+      function Shrine(distance, fact){
+        this.x = distance;
+        this.y = (HEIGHT-100)-(34*2);
+        this.width = 32*2;
+        this.height = 34*2;
+        this.fact = fact;
+        this.life = 1;
+
+        this.update = function(){
+          if(movingNX){
+            this.x += 4;
+          }
+
+          if(movingPX){
+            this.x -= 4;
+          }
+
+          if(collision(this.x, this.y, this.width, this.height, character.x, character.y, character.width, character.height)){
+            if(keystate[D_KEY]){
+              this.life = 0;
+              shrinesLeft -= 1;
+              pop(this.x+(this.width/2), this.y+(this.height/2), radius=5, speed=4, shades=nuclear, durationFactor=0.9);
+              pop(this.x+(this.width/2), this.y+(this.height/2), radius=10, speed=6, shades=nuclear, durationFactor=0.9);
+              alert(this.fact);
+              delete keystate[D_KEY];
+            }
+          }
+        };
+
+        this.draw = function(){
+          ctx.drawImage(relic, this.x, this.y, this.width, this.height);
+        }
+      }
+
+      var start = false;
+
+      var movingNX = false;
+      var movingPX = false;
+
+      var mount = new Image();
+      mount.src = "mountains.png";
+      var mountains = {
+        x: 0,
+        y: 0,
+        width: WIDTH,
+        height: HEIGHT-100,
+        speed: 0.25,
+
+        update: function(){
+          if(movingNX){
+            this.x += this.speed;
+          }
+
+          if(movingPX){
+            this.x -= this.speed;
+          }
+        },
+
+        draw: function(){
+          ctx.drawImage(mount, this.x, this.y, this.width, this.height);
+          if(this.x+this.width > WIDTH){
+            ctx.drawImage(mount, this.x-this.width, this.y, this.width, this.height);
+            if(this.x > WIDTH){
+              this.x = 0;
+            }
+          }
+          if(this.x < 0){
+            ctx.drawImage(mount, this.x+this.width, this.y, this.width, this.height);
+            if(this.x+this.width < 0){
+              this.x = 0;
+            }
+          }
+        }
+      }
+      objects.push(mountains);
+
+      var tree = new Image();
+      tree.src = "trees.png";
+      var trees = {
+        x: 0,
+        y: HEIGHT-100-186,
+        width: WIDTH,
+        height: 186,
+        speed: 4,
+
+        update: function(){
+          if(movingNX){
+            this.x += this.speed;
+          }
+
+          if(movingPX){
+            this.x -= this.speed;
+          }
+        },
+
+        draw: function(){
+          ctx.drawImage(tree, this.x, this.y, this.width, this.height);
+          if(this.x+this.width > WIDTH){
+            ctx.drawImage(tree, this.x-this.width, this.y, this.width, this.height);
+            if(this.x > WIDTH){
+              this.x = 0;
+            }
+          }
+          if(this.x < 0){
+            ctx.drawImage(tree, this.x+this.width, this.y, this.width, this.height);
+            if(this.x+this.width < 0){
+              this.x = 0;
+            }
+          }
+        }
+      }
+      objects.push(trees);
+
+      for(var i = 0; i < total; i++){
+        createShrine(i);
+      }
+
+      var character = {
+        x: null,
+        y: null,
+        width: 32,
+        height: 32,
+        vel: 5,
+        og_vel: 5,
+        jumped: false,
+        jumping: false,
+        jumpCoolOff: 20,
+        once: false,
+        timer: 15,
+        activate: false,
+
+        resetvel: function(){
+          this.vel = this.og_vel;
+          this.jumped = false;
+        },
+
+        jump: function(){
+          this.resetvel();
+          if(this.jumped == false){
+            this.jumping = true;
+            this.jumped = true;
+          }
+        },
+
+        update: function(){
+          if((this.y+this.height) <= HEIGHT-100){
+            this.vel *= 1.005
+            if(this.y + this.height + this.vel <= HEIGHT-100-this.vel){
+              this.y += this.vel;
+            } else {
+              this.y += (HEIGHT-100)-(this.y + this.height);
+            }
+          } else {
+            this.resetvel();
+          }
+
+          if(collision(this.x, this.y, this.width, this.height, 0, (HEIGHT-101), WIDTH, 100)){
+            this.activate = true;
+          }
+
+          if(this.jumping){
+            this.jumpCoolOff--;
+            if(this.jumpCoolOff >= 0){
+              this.vel *= 1.5;
+              this.y -= this.vel+this.og_vel;
+            } else {
+              this.jumpCoolOff = 20;
+              this.jumping = false;
+              this.jumped=false;
+            }
+          }
+
+          if(this.once){
+            this.timer--;
+            if(this.timer >= 0){
+              this.jump();
+            } else {
+              this.once = false;
+              this.jumping = false
+              this.jumped = false;
+              this.timer = 15;
+            }
+          }
+
+          if(keystate[SPACE] && this.activate){this.once = true; this.activate = false;}
+          if(keystate[LEFT]){movingNX=true; movingPX=false;}
+          if(keystate[RIGHT]){movingPX=true; movingNX=false;}
+          if(!(keystate[RIGHT] || keystate[LEFT])){movingNX=false; movingPX=false;}
+        },
+
+        draw: function(){
+          ctx.fillStyle = "#555";
+          ctx.fillRect(this.x, this.y, this.width, this.height);
+        }
+      }
+
+      function main(){
+        canvas = document.getElementsByTagName('canvas')[0];
+        ctx = canvas.getContext('2d');
+        canvas.width = WIDTH;
+        canvas.height = HEIGHT;
+
+        keystate = {};
+        window.addEventListener("keydown", function(e){
+            keystate[e.keyCode] = true;
+            if(e.keyCode == SPACE){
+              e.preventDefault();
+            }
+        })
+        window.addEventListener("keyup", function(e){
+            delete keystate[e.keyCode]
+        })
+
+        init();
+
+        var loop = function(){
+          update();
+          draw();
+          window.requestAnimationFrame(loop, canvas);
+        }
+        window.requestAnimationFrame(loop, canvas);
+      }
+
+      function init(){
+        character.x = (WIDTH/2)-(character.width/2);
+        character.y = -100;
+      }
+
+      function checkfordead(){
+        for(var obj in objects){
+          if(objects[obj].life <= 0){
+            objects.splice(obj, 1);
+          }
+        }
+        for(var particle in Particles){
+          if(Particles[particle].health <= 0){
+            Particles.splice(particle, 1);
+          }
+        }
+      }
+
+      function update(){
+        checkfordead();
+        for(var particle in Particles){
+          if(movingNX){
+            Particles[particle].x += 4;
+          }
+
+          if(movingPX){
+            Particles[particle].x -= 4;
+          }
+          Particles[particle].update();
+        }
+        if(start){
+          for(var obj in objects){
+            objects[obj].update();
+          }
+          character.update();
+        }
+        if(shrinesLeft <= 0 && !lose){
+          lose = true;
+          alert("What are you?! Some kind of Shinto ultra radical zealot?! You destroyed all of the Shrines in this area, way to contribute towards the disetablishment of Shinto, you're a terrible person :(");
+        }
+      }
+
+      window.addEventListener("keydown", function(evt){
+        if(evt.keyCode == SPACE){
+          start = true;
+        }
+      })
+
+      function draw(){
+        if(start == false){
+          ctx.fillStyle = "#c3f07a";
+          ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+          ctx.fillStyle = "#333";
+          ctx.font = "bold 32pt Monospace";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText("Shintō Shrines", WIDTH/2, (HEIGHT/2));
+          ctx.fillStyle = "#666";
+          ctx.font = "18pt Monospace";
+          ctx.fillText("Press Spacebar to start...", WIDTH/2, (HEIGHT/2)+64)
+        } else { //begin
+          ctx.fillStyle = "#fff";
+          ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+          for(var obj in objects){
+            objects[obj].draw();
+          }
+
+          ctx.fillStyle = "#111";
+          ctx.font = "bold 16pt Monospace";
+          ctx.textAlign = "left";
+          ctx.fillText("Shrines Not Found: " + shrinesLeft, 20, 20);
+          ctx.save();
+
+          character.draw();
+
+          for(var particle in Particles){
+            Particles[particle].draw();
+          }
+
+          ctx.fillStyle = "#c3f07a";
+          ctx.fillRect(0, HEIGHT-100, WIDTH, 100);
+
+          ctx.restore();
+        }
+      }
+
+      main();
+    </script>
+    <div id="how">
+      &nbsp;&nbsp;&nbsp;&nbsp;Use the arrow keys left and right to move, and use space to jump all about in this infinite world of only trees and mountains. Find and destroy (using the D key) all of the Shinto shrines, in doing so, you'll learn more about them; it's kind of a win-win situation.
+    </div>
+  </body>
+</html>
